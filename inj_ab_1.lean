@@ -1,13 +1,13 @@
 import group_theory.subgroup
 import algebra
 import tactic
-
 open function
 
 -- Injective abelian group
 class is_inj_abgp (G : Type) [add_comm_group G] : Prop :=
   (inj_extd : ∀ (H K : Type) [add_comm_group H] [add_comm_group K]
-  (i : H →+ K) (h_subHK : injective i), (∀f : H →+ G, ∃f_extd : K →+ G, (∀h : H, f_extd (i h) = f h)))
+  (i : H →+ K) 
+  (h_subHK : injective i), (∀f : H →+ G, ∃f_extd : K →+ G, (∀h : H, f_extd (i h) = f h)))
 
 -- Divisible abelian group
 class is_div_abgp (G : Type) [add_comm_group G] : Prop :=
@@ -69,6 +69,65 @@ begin
   use (f_extd 1), exact G_is_inj_h,
 end
 
+/-
+Takes the data of H ⊆ K and f: H → G
+and asks for an intermediate H ⊆ H1 ⊆ K such that 
+f_extd: H1 → G is a lift of f: H → G.
+-/
+structure extd_abhom 
+{H K G : Type} [add_comm_group H] [add_comm_group K] [add_comm_group G]
+(i0 : H →+ K) (i0_inj: injective i0) (f : H →+ G) := 
+  (H1: Type)
+  [h_H1: add_comm_group H1]
+  (i1 : H →+ H1)
+  (i2 : H1 →+ K)
+  (i1_inj: injective i1)
+  (i2_inj: injective i2)
+  (h_comm_HH1K : i2 ∘ i1 = i0) -- commuting inclusions
+  (f_extd : H1 →+ G)
+  (h_lift: f_extd ∘ i1 = f) -- f_extd is a lift of f
+
+-- Declare that H1 in an extd_abhom is an add_comm_group.
+instance {H K G : Type} [add_comm_group H] [add_comm_group K] [add_comm_group G] (i0 : H →+ K) (i0_inj: injective i0) (f : H →+ G)
+{f_ex : extd_abhom i0 i0_inj f} : add_comm_group f_ex.H1 := f_ex.h_H1
+
+/-
+Partial order on extd_abhom
+Each time we need to sandwich between H,K and fix the target G.
+-/
+def order_extd_abhom
+{H K G : Type} [add_comm_group H] [add_comm_group K] [add_comm_group G]
+{i0 : H →+ K} {i0_inj: injective i0} {f : H →+ G}
+: (extd_abhom i0 i0_inj f) → (extd_abhom i0 i0_inj f) → Prop := 
+begin
+  intros hom1 hom2,
+  exact (∃j : hom1.H1 →+ hom2.H1, 
+  ∃j_inj : injective j, -- hom.H1 ⊆ hom2.H1
+  (hom2.i2 ∘ j = hom1.i2) ∧ -- comm. of inclusion
+  (hom2.f_extd ∘ j = hom1.f_extd)), -- comm. of lifts
+end
+
+
+def ord_eextd_abhom_trans {H K G : Type} [add_comm_group H] [add_comm_group K] [add_comm_group G]
+(i0 : H →+ K) (i0_inj: injective i0) (f : H →+ G)
+{f1 f2 f3 : extd_abhom i0 i0_inj f} : order_extd_abhom f1 f2 → order_extd_abhom f2 f3 → order_extd_abhom f1 f3 :=
+begin
+  sorry,
+end
+
+-- To check that the above setup works correctly.
+-- def ii : ℤ →+ ℤ := { to_fun := id,
+--   map_zero' := by tauto,
+--   map_add' := by tauto}
+-- #check set (extd_abhom ii (by tauto) ii)
+
+
+/-
+(h : ∀ (c : set α), zorn.chain r c → (∃ (ub : α), ∀ (a : α), a ∈ c → r a ub)) (trans : ∀ {a b c : α}, r a b → r b c → r a c) 
+-/
+
+
+
 -- Divisble abelian group is injective.
 theorem div_is_inj_abgp (G : Type) [add_comm_group G] : is_div_abgp G → is_inj_abgp G :=
 begin
@@ -88,19 +147,99 @@ begin
     Contradiction to maximality.
   -/
 
+  /-
+   def zorn.chain {α : Type u} (r : α → α → Prop) (c : set α) : Prop
+
+   theorem zorn.exists_maximal_of_chains_bounded {α : Type u} {r : α → α → Prop} (h : ∀ (c : set α), zorn.chain r c → (∃ (ub : α), ∀ (a : α), a ∈ c → r a ub)) (trans : ∀ {a b c : α}, r a b → r b c → r a c) :
+   ∃ (m : α), ∀ (a : α), r m a → r a m
+
+   simply need to define a set α and a relation r (partial order)...
+  -/
+
   intro divG,
   refine ⟨_⟩,
   intros H K i hk hK wer usw, -- For any H ⊆ K, f: H → G,
   resetI, -- telling that H, K are groups, from local context to type class
   -- zorn.exists_maximal_of_chains_bounded
   -- zorn.max_chain
+
+  -- set of all extd_moprhs...
+  -- set α is α → Prop
+  -- extd_morph : set (H1 -> G)
+  
+
+  -- let extd_morphs : (H1 : Type) [add_comm_group H1] ()
   
 
   sorry,
 end
+
+
 
 -- An abelian group is injective iff divisible.
 theorem inj_iff_div_abgp (G : Type) [add_comm_group G] : is_inj_abgp G ↔ is_div_abgp G :=
 begin
   split, exact inj_is_div_abgp G, exact div_is_inj_abgp G,
 end
+
+
+/-
+Dump
+
+
+/-
+  extd_abgp_hom i1 i2 f f_extd is true when
+  H H1 K G are abelian groups
+  H ⊆ H1 ⊆ K (i1, i2 are the inclusion hom.)
+  f: H → G, f_extd H1 → G, f_extd restricts to f at H.
+-/
+class extd_abgp_hom 
+{H H1 K G : Type} [add_comm_group H] [add_comm_group H1] [add_comm_group K] [add_comm_group G] 
+(i1 : H →+ H1) (i2 : H1 →+ K) (f : H →+ G) (f_extd : H1 →+ G) : Prop := 
+  (h_extd_hom: ∀h : H, f_extd (i1 h) = f h)
+  (i1_inj : injective i1)
+  (i2_inj : injective i2)
+
+#check extd_abgp_hom -> extd_abgp_hom -> Prop
+
+/-
+  partial_order_extd_abgp_hom i1_1 i2_1 i1_2 i2_2 is true when
+  H H1 H2 K G are abelian groups
+  H ⊆ H1 ⊆ K, H ⊆ H2 ⊆ K
+  we have extensions f_extd1 : H1 → G, f_extd2 : H2 → G of f
+  f_extd2 is an extension of f_extd1
+-/
+def partial_order_extd_abgp_hom {H H1 H2 K G : Type} [add_comm_group H] [add_comm_group H1] [add_comm_group H2] [add_comm_group K] [add_comm_group G]
+(i1_1 : H →+ H1) (i2_1 : H1 →+ K) 
+(i1_2 : H →+ H2) (i2_2 : H2 →+ K) 
+(f : H →+ G) (f_extd1 : H1 →+ G) (f_extd2 : H2 →+ G) 
+[extd_abgp_hom i1_1 i2_1 f f_extd1]
+[extd_abgp_hom i1_2 i2_2 f f_extd2]
+: Prop := 
+  (∃j : H1 →+ H2, extd_abgp_hom j i2_2 f_extd1 f_extd2)
+-/
+
+
+/-
+  partial_order_extd_abgp_hom i1_1 i2_1 i1_2 i2_2 is true when
+  H H1 H2 K G are abelian groups
+  H ⊆ H1 ⊆ K, H ⊆ H2 ⊆ K
+  we have extensions f_extd1 : H1 → G, f_extd2 : H2 → G of f
+  f_extd2 is an extension of f_extd1
+-/
+
+-- instance {G : mygroup} : add_comm_group G.G := G.hG
+
+-- (∃j : H1 →+ H2, extd_abgp_hom j i2_2 f_extd1 f_extd2)
+
+/-
+def partial_order_extd_abgp_hom {H H1 H2 K G : Type} [add_comm_group H] [add_comm_group H1] [add_comm_group H2] [add_comm_group K] [add_comm_group G]
+(i1_1 : H →+ H1) (i2_1 : H1 →+ K) 
+(i1_2 : H →+ H2) (i2_2 : H2 →+ K) 
+(f : H →+ G) (f_extd1 : H1 →+ G) (f_extd2 : H2 →+ G) 
+[extd_abgp_hom i1_1 i2_1 f f_extd1]
+[extd_abgp_hom i1_2 i2_2 f f_extd2]
+: Prop := 
+  (∃j : H1 →+ H2, extd_abgp_hom j i2_2 f_extd1 f_extd2)
+#check extd_abgp_hom
+-/
