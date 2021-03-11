@@ -171,7 +171,6 @@ begin
 end
 
 
--- kevin: this is not a thing?
 lemma exists_notin_of_ne_top {G : Type} [add_comm_group G] {H : add_subgroup G} (h : H ≠ ⊤) :
 ∃ x : G, x ∉ H := 
 begin
@@ -183,14 +182,13 @@ begin
   apply h,
 end
 
-#check add_monoid_hom.mrestrict
 
-@[to_additive]
-def monoid_hom.restrict {G K : Type*} [group G] [group K] 
-  {f : G →* K} (H : subgroup G) : H →* K := f.comp H.subtype
-
-
-lemma extd_mor_from_add_subgps {K G : Type} [add_comm_group K] [add_comm_group G] {H1 H2 : add_subgroup K} (f1 : H1 →+ G) (f2 : H2 →+ G) (f_res_agree : f1.mrestrict (H1 ⊓ H2 : add_subgroup H1) = f2.restrict (H1 ⊓ H2 : add_subgroup K) : (∃f_extd : (H1 ⊔ H2 : add_subgroup K) →+ G, f_extd.restrict H1 = f_extd.restrict H2) :=
+lemma extd_mor_from_add_subgps 
+{G : Type} [add_group G] (H1 H2 : add_subgroup G) (f1 : H1 →+ G) (f2 : H2 →+ G)
+(h : ∀ (x1 : H1) (x2 : H2), (x1 : G) = (x2 : G) → f1 x1 = f2 x2) :
+  ∃ f : ↥(H1 ⊔ H2) →+ G, 
+    f.comp (add_subgroup.inclusion le_sup_left) = f1 ∧
+    f.comp (add_subgroup.inclusion le_sup_right) = f2 := 
 begin
   sorry,
 end
@@ -239,13 +237,28 @@ begin
 
   -- Proof by contradiction on the maximal extension taking up everything
   have max_H1_is_K : max_H1_sub = ⊤,
-  -- rw surjective,
-  by_contra not_top, -- what if this element k is missing
+  by_contra not_top,
+
   have not_top_2 : max_H1_sub ≠ ⊤ := by tauto,
   have not_top_has_elt := exists_notin_of_ne_top not_top_2,
   cases not_top_has_elt with k k_notin_top,
+  clear not_top,
+  clear not_top_2,
 
-  let max_H1_bigger := max_H1_sub ⊔ (add_subgroup.closure {k}),
+  let k_gp : add_subgroup K := add_subgroup.closure {k},
+  let max_H1_bigger : add_subgroup K := max_H1_sub ⊔ k_gp,
+  by_cases h : (∃n ∈ ℕ, n •ℕ k ∈ max_H1_sub),
+  
+  
+
+  /-
+  (f1 : H1 →+ G) (f2 : H2 →+ G)
+  (h : ∀ (x1 : H1) (x2 : H2), (x1 : G) = (x2 : G) → f1 x1 = f2 x2) :
+  ∃ f : ↥(H1 ⊔ H2) →+ G, 
+    f.comp (add_subgroup.inclusion le_sup_left) = f1 ∧
+    f.comp (add_subgroup.inclusion le_sup_right) = f2 := 
+  -/
+  
 
   -- Assuming that n.k is in max_H1 for some n > 0
   -- have mult_k_into_maxH1 : (∃n : ℕ, ∃h : max_H1_sub, n •ℕ k = h),
@@ -258,3 +271,4 @@ theorem inj_iff_div_abgp (G : Type) [add_comm_group G] : is_inj_abgp G ↔ is_di
 begin
   split, exact inj_is_div_abgp G, exact div_is_inj_abgp G,
 end
+
